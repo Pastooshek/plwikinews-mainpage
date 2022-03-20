@@ -174,11 +174,11 @@ async function getTop5(){
 }
 
 /*
-*   "where" is a subpage of the main page where we should put the sneak peak of a given article
+*   "where" is a subpage of the main page where we should put the sneak peek of a given article
 *   "what" is a title of said article
 */
 
-async function generateSneakPeak(where, what){
+async function generateSneakPeek(where, what){
 
     const bot = await mwn.init({
         apiUrl: 'https://pl.wikinews.org/w/api.php',
@@ -192,7 +192,7 @@ async function generateSneakPeak(where, what){
 
     let ans = await bot.read(what); //Answer from the API
 
-    //We create a string matching specifications for a sneak peak of an article. 
+    //We create a string matching specifications for a sneak peek of an article. 
     //Those specifications were provided by Msz2001.
     let content =
         `{{Strona główna/Wycinek artykułu
@@ -219,7 +219,7 @@ async function updateMainPage(){
   
     for(let i=0;i<5;i++){ //This "5" represents 5 articles we are going to represent. We might need to change that value in the future to match our demands.
         let pageToChange = pref + (i+1); 
-        await generateSneakPeak(pageToChange, arr[i]);
+        await generateSneakPeek(pageToChange, arr[i]);
     }
     await purgePage("Strona główna"); //Purging the main page to make sure that changes we've made can be seen by everybody 
 }
