@@ -10,41 +10,19 @@ const USERAGENT = config.user_agent; //https://meta.wikimedia.org/wiki/User-Agen
 *   This function purges cache of a given page, allowing it to be "refreshed"
 *   Quite important to call it after changing contents of the main page
 */
-async function purgePage(title){
-
-    const bot = await mwn.init({
-        apiUrl: 'https://pl.wikinews.org/w/api.php',
-        username: BOTUSERNAME,
-        password: BOTPASSWORD,
-        userAgent: USERAGENT,
-        defaultParams: {
-            assert: 'user' 
-        }
-    });
-
-    let x = await bot.request({
+async function purgePage(bot, title){
+    await bot.request({
         action: 'purge',
         titles: title
     });
-
 }
 
-/*
+/**
 *   Function that refreshes the Dynamic Page List the bot uses by performing a null edition.
 *   Technically we could purge the cache here, but by hardcoding the contents of page we've got an additional layer of protection agains vandals :)
+*   @param bot The object obtained from mwn.init
 */
-async function refreshDPL(){ 
-
-    const bot = await mwn.init({
-        apiUrl: 'https://pl.wikinews.org/w/api.php',
-        username: BOTUSERNAME,
-        password: BOTPASSWORD,
-        userAgent: USERAGENT,
-        defaultParams: {
-            assert: 'user'
-        }
-    });
-
+async function refreshDPL(bot){ 
     let content =
     `<DynamicPageList>
     namespace=0
@@ -55,7 +33,6 @@ async function refreshDPL(){
     </DynamicPageList>`;
 
     await bot.save("Wikireporter:PastooshekBOT/Najnowsze", content, "Bot odświeża listę najnowszych artykułów");
-
 }
 
 /*
@@ -145,20 +122,9 @@ async function getLead(ans){
 *   It's not the cleanest implementation, but it works sufficiently.
 *   Please note that said list excludes articles with {{tworzone}} template.
 */
-async function getTop5(){
-
-    await refreshDPL(); //Refreshing dynamic page list
+async function getTop5(bot){
+    await refreshDPL(bot); //Refreshing dynamic page list
     const title = 'Wikireporter:PastooshekBOT/Najnowsze';
-
-    const bot = await mwn.init({
-        apiUrl: 'https://pl.wikinews.org/w/api.php',
-        username: BOTUSERNAME,
-        password: BOTPASSWORD,
-        userAgent: USERAGENT,
-        defaultParams: {
-            assert: 'user'
-        }
-    });
 
     let ans = await bot.parseTitle(title); //We need to parse the contents of the page before using regex on it.
 
@@ -178,18 +144,7 @@ async function getTop5(){
 *   "what" is a title of said article
 */
 
-async function generateSneakPeek(where, what){
-
-    const bot = await mwn.init({
-        apiUrl: 'https://pl.wikinews.org/w/api.php',
-        username: BOTUSERNAME,
-        password: BOTPASSWORD,
-        userAgent: USERAGENT,
-        defaultParams: {
-            assert: 'user' 
-        }
-    });
-
+async function generateSneakPeek(bot, where, what){
     let ans = await bot.read(what); //Answer from the API
 
     //We create a string matching specifications for a sneak peek of an article. 
@@ -204,24 +159,33 @@ async function generateSneakPeek(where, what){
         |duży={{{duży|}}}
         }}`;
         
-        await bot.save(where, content, "Bot zmienia artykuł do ekspozycji");
-        
+    await bot.save(where, content, "Bot zmienia artykuł do ekspozycji");
 }
 
 /*
 *   Function tasked with updating main page, called by the main() every 20 minutes
 */
 async function updateMainPage(){
+    // Initialize the bot to be used in subsequent calls
+    const bot = await mwn.init({
+        apiUrl: 'https://pl.wikinews.org/w/api.php',
+        username: BOTUSERNAME,
+        password: BOTPASSWORD,
+        userAgent: USERAGENT,
+        defaultParams: {
+            assert: 'user' 
+        }
+    });
 
-    let arr = await getTop5();
+    let arr = await getTop5(bot);
 
     const pref = "Szablon:Strona główna/Artykuł "; //after adding a number it should look like this: Szablon:Strona główna/Artykuł 1 
   
     for(let i=0;i<5;i++){ //This "5" represents 5 articles we are going to represent. We might need to change that value in the future to match our demands.
         let pageToChange = pref + (i+1); 
-        await generateSneakPeek(pageToChange, arr[i]);
+        await generateSneakPeek(bot, pageToChange, arr[i]);
     }
-    await purgePage("Strona główna"); //Purging the main page to make sure that changes we've made can be seen by everybody 
+    await purgePage(bot, "Strona główna"); //Purging the main page to make sure that changes we've made can be seen by everybody 
 }
 
 /**
