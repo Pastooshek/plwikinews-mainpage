@@ -4,7 +4,9 @@ const config = require('./config.json');
 
 const BOTUSERNAME = config.bot_username;
 const BOTPASSWORD = config.bot_password;
-const USERAGENT = config.user_agent; //https://meta.wikimedia.org/wiki/User-Agent_policy 
+const USERAGENT = config.user_agent; //https://meta.wikimedia.org/wiki/User-Agent_policy
+
+const ARTICLE_COUNT = 5;
 
 /*
 *   This function purges cache of a given page, allowing it to be "refreshed"
@@ -21,12 +23,13 @@ async function purgePage(bot, title){
 *   Function that refreshes the Dynamic Page List the bot uses by performing a null edition.
 *   Technically we could purge the cache here, but by hardcoding the contents of page we've got an additional layer of protection agains vandals :)
 *   @param bot The object obtained from mwn.init
+*   @param article_count Number of articles to load
 */
-async function refreshDPL(bot){ 
+async function refreshDPL(bot, article_count){ 
     let content =
     `<DynamicPageList>
     namespace=0
-    count=5
+    count=${article_count}
     notcategory=tworzone
     notcategory=archiwalne
     notcategory=Wyróżnione
@@ -117,13 +120,15 @@ async function getLead(ans){
     }
 }
 
-/*
-*   Checks the 5 newest articles that are provided via the dynamic page list.
+/**
+*   Checks the newest articles that are provided via the dynamic page list.
 *   It's not the cleanest implementation, but it works sufficiently.
 *   Please note that said list excludes articles with {{tworzone}} template.
+*   @param bot The object obtained from mwn.init
+*   @param article_count Number of articles to load
 */
-async function getTop5(bot){
-    await refreshDPL(bot); //Refreshing dynamic page list
+async function getTop(bot, article_count){
+    await refreshDPL(bot, article_count); //Refreshing dynamic page list
     const title = 'Wikireporter:PastooshekBOT/Najnowsze';
 
     let ans = await bot.parseTitle(title); //We need to parse the contents of the page before using regex on it.
@@ -177,11 +182,12 @@ async function updateMainPage(){
         }
     });
 
-    let arr = await getTop5(bot);
+    let arr = await getTop(bot, ARTICLE_COUNT);
 
     const pref = "Szablon:Strona główna/Artykuł "; //after adding a number it should look like this: Szablon:Strona główna/Artykuł 1 
-  
-    for(let i=0;i<5;i++){ //This "5" represents 5 articles we are going to represent. We might need to change that value in the future to match our demands.
+
+    // Apply changes to all the appropriate subpages
+    for(let i=0;i<arr.length;i++){
         let pageToChange = pref + (i+1); 
         await generateSneakPeek(bot, pageToChange, arr[i]);
     }
