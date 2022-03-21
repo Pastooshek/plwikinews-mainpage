@@ -175,14 +175,14 @@ async function updateMainPage(){
         }
     });
 
-    let arr = await getTop(bot, ARTICLE_COUNT);
+    let recentTitles = await getTop(bot, ARTICLE_COUNT);
 
-    const pref = "Szablon:Strona główna/Artykuł "; //after adding a number it should look like this: Szablon:Strona główna/Artykuł 1 
+    const prefix = "Szablon:Strona główna/Artykuł "; //after adding a number it should look like this: Szablon:Strona główna/Artykuł 1 
 
     // Apply changes to all the appropriate subpages
-    for(let i=0;i<arr.length;i++){
-        let pageToChange = pref + (i+1); 
-        await generateSneakPeek(bot, pageToChange, arr[i]);
+    for(let i=0;i<recentTitles.length;i++){
+        let pageToChange = prefix + (i+1); 
+        await generateSneakPeek(bot, pageToChange, recentTitles[i]);
     }
     await purgePage(bot, "Strona główna"); //Purging the main page to make sure that changes we've made can be seen by everybody 
 }
