@@ -4,173 +4,136 @@ const config = require('./config.json');
 
 const BOTUSERNAME = config.bot_username;
 const BOTPASSWORD = config.bot_password;
-const USERAGENT = config.user_agent; //https://meta.wikimedia.org/wiki/User-Agent_policy 
+const USERAGENT = config.user_agent; //https://meta.wikimedia.org/wiki/User-Agent_policy
+
+const ARTICLE_COUNT = 5;
+const DPL_PAGE = 'Wikireporter:PastooshekBOT/Najnowsze';
 
 /*
 *   This function purges cache of a given page, allowing it to be "refreshed"
 *   Quite important to call it after changing contents of the main page
 */
-async function purgePage(title){
-
-    const bot = await mwn.init({
-        apiUrl: 'https://pl.wikinews.org/w/api.php',
-        username: BOTUSERNAME,
-        password: BOTPASSWORD,
-        userAgent: USERAGENT,
-        defaultParams: {
-            assert: 'user' 
-        }
-    });
-
-    let x = await bot.request({
+async function purgePage(bot, title){
+    await bot.request({
         action: 'purge',
         titles: title
     });
-
 }
 
-/*
+/**
 *   Function that refreshes the Dynamic Page List the bot uses by performing a null edition.
 *   Technically we could purge the cache here, but by hardcoding the contents of page we've got an additional layer of protection agains vandals :)
+*   @param bot The object obtained from mwn.init
+*   @param article_count Number of articles to load
 */
-async function refreshDPL(){ 
-
-    const bot = await mwn.init({
-        apiUrl: 'https://pl.wikinews.org/w/api.php',
-        username: BOTUSERNAME,
-        password: BOTPASSWORD,
-        userAgent: USERAGENT,
-        defaultParams: {
-            assert: 'user'
-        }
-    });
-
+async function refreshDPL(bot, article_count){ 
     let content =
     `<DynamicPageList>
     namespace=0
-    count=5
+    count=${article_count}
     notcategory=tworzone
     notcategory=archiwalne
     notcategory=Wyróżnione
     </DynamicPageList>`;
 
-    await bot.save("Wikireporter:PastooshekBOT/Najnowsze", content, "Bot odświeża listę najnowszych artykułów");
-
+    await bot.save(DPL_PAGE, content, "Bot odświeża listę najnowszych artykułów");
 }
 
-/*
+/**
 *   Function that gets the API response and searches for a category that the particular article should be associated with.
+*   @param wikitext The page contents as a wikitext
 */
-async function getPortal(ans){
-    ans = ans.revisions[0].content;
-
+async function getPortal(wikitext){
     const pattern = /{{(Gospodarka|Katastrofy|Kultura|Nauka|Polityka|Prawo i przestępczość|Sport|Społeczeństwo|Technika)/i; 
-    let date = ans.match(pattern);
-    if(date == null){
+    let portal = wikitext.match(pattern);
+    if(portal == null){
         return "";
     }
     else{
-        let x = date[0].substring(2);
-        x  = x[0].toUpperCase() + x.substr(1);
-        return x;
+        let portalName = portal[1];
+        portalName = portalName[0].toUpperCase() + portalName.substring(1);
+        return portalName;
     }
 }
 
-/*
+/**
 *   Gets the API response, looks for the date of article's creation
+*   @param wikitext The page contents as a wikitext
 */
-async function getDate(ans){
-
-    ans = ans.revisions[0].content;
-
-    const pattern = /{{data\|.*}}/i;  //Loking for a particular template that contains info we need
-    let date = ans.match(pattern);
+async function getDate(wikitext){
+    const pattern = /{{data\|(.*?)}}/i;  //Loking for a particular template that contains info we need
+    let date = wikitext.match(pattern);
     if(date == null){
         return "";
     }
     else{
-        return date[0].substring(7,17);
+        return date[1];
     }
 }
 
-/*
+/**
 *   Gets the API response, checks if there is an image in the text. 
 *   If there is, it should return its name (or blank string if there was no image found).
+*   @param wikitext The page contents as a wikitext
 */
-async function getImage(ans){
-
-    ans = ans.revisions[0].content;
-
+async function getImage(wikitext){
     //Yes, those regexes are scary, but @Msz2001 made sure they do indeed work!
-    let pattern = /\|[^|=\[\]\n]*\.(JPG|PNG|JPEG|WEBP|GIF|TIF|TIFF|BMP|SVG)/i;
-    let image = ans.match(pattern);
+    let pattern = /\|([^|=\[\]\n]*\.(JPG|PNG|JPEG|WEBP|GIF|TIF|TIFF|BMP|SVG))/i;
+    let image = wikitext.match(pattern);
     if(image == null){
-        pattern = /\[\[Plik:.*\.(JPG|PNG|JPEG|WEBP|GIF|TIF|TIFF|BMP|SVG)/i; 
-        image = ans.match(pattern);
+        pattern = /\[\[Plik:(.*\.(JPG|PNG|JPEG|WEBP|GIF|TIF|TIFF|BMP|SVG))/i; 
+        image = wikitext.match(pattern);
 
         if(image == null){
             return "";
         }
         else{
-            return image[0].substring(7);
+            return image[1];
         }
-        
     }
     else{
-        return image[0].substring(1);
+        return image[1];
     }
 }
 
-/*
+/**
 *   Gets the response from the API and returns the article lead.
 *   The lead should be written in bold to be recognized
+*   @param wikitext The page contents as a wikitext
 */
-async function getLead(ans){
-
-    ans = ans.revisions[0].content;
-
-    const pattern = /'''.*'''/; //Looking for text in bold (as specified earlier)
+async function getLead(wikitext){
+    const pattern = /'''(.*?)'''/; //Looking for text in bold (as specified earlier)
     
-    let lead = ans.match(pattern);
+    let lead = wikitext.match(pattern);
     if(lead===null){
         return "";
     }
     else{
-        return lead[0].substring(3,lead[0].length-3);
+        return lead[1];
     }
 }
 
-/*
-*   Checks the 5 newest articles that are provided via the dynamic page list.
+/**
+*   Checks the newest articles that are provided via the dynamic page list.
 *   It's not the cleanest implementation, but it works sufficiently.
 *   Please note that said list excludes articles with {{tworzone}} template.
+*   @param bot The object obtained from mwn.init
+*   @param article_count Number of articles to load
 */
-async function getTop5(){
+async function getTop(bot, article_count){
+    await refreshDPL(bot, article_count); //Refreshing dynamic page list
+    let pageContent = await bot.parseTitle(DPL_PAGE); //We need to parse the contents of the page before using regex on it.
 
-    await refreshDPL(); //Refreshing dynamic page list
-    const title = 'Wikireporter:PastooshekBOT/Najnowsze';
+    const regex = /title=\"(.*?)\">/g;
+    let arrayOfMatches = pageContent.matchAll(regex);
+    let titles = [];
 
-    const bot = await mwn.init({
-        apiUrl: 'https://pl.wikinews.org/w/api.php',
-        username: BOTUSERNAME,
-        password: BOTPASSWORD,
-        userAgent: USERAGENT,
-        defaultParams: {
-            assert: 'user'
-        }
-    });
-
-    let ans = await bot.parseTitle(title); //We need to parse the contents of the page before using regex on it.
-
-    const regex = /title=.*\">/g; 
-    let arrayOfMatches = ans.match(regex);
-
-    for(let i=0;i<arrayOfMatches.length;i++){
-        arrayOfMatches[i]=arrayOfMatches[i].substr(7); //This function is deprecated; somebody will need to refactor it one day
-        arrayOfMatches[i]=arrayOfMatches[i].substr(0,arrayOfMatches[i].length-2);
+    // Extract the first capture group from every match
+    for(let match of arrayOfMatches){
+        titles.push(match[1]);
     }
 
-    return arrayOfMatches;
+    return titles;
 }
 
 /*
@@ -178,8 +141,30 @@ async function getTop5(){
 *   "what" is a title of said article
 */
 
-async function generateSneakPeek(where, what){
+async function generateSneakPeek(bot, where, what){
+    let ans = await bot.read(what); //Answer from the API
+    let wikitext = ans.revisions[0].content;
 
+    //We create a string matching specifications for a sneak peek of an article. 
+    //Those specifications were provided by Msz2001.
+    let content =
+        `{{Strona główna/Wycinek artykułu
+        |tytuł=${what}
+        |data=${await getDate(wikitext)}
+        |treść=${await getLead(wikitext)}
+        |obrazek=${await getImage(wikitext)}
+        |portal=${await getPortal(wikitext)}
+        |duży={{{duży|}}}
+        }}`;
+        
+    await bot.save(where, content, "Bot zmienia artykuł do ekspozycji");
+}
+
+/*
+*   Function tasked with updating main page, called by the main() every 20 minutes
+*/
+async function updateMainPage(){
+    // Initialize the bot to be used in subsequent calls
     const bot = await mwn.init({
         apiUrl: 'https://pl.wikinews.org/w/api.php',
         username: BOTUSERNAME,
@@ -190,58 +175,25 @@ async function generateSneakPeek(where, what){
         }
     });
 
-    let ans = await bot.read(what); //Answer from the API
+    let recentTitles = await getTop(bot, ARTICLE_COUNT);
 
-    //We create a string matching specifications for a sneak peek of an article. 
-    //Those specifications were provided by Msz2001.
-    let content =
-        `{{Strona główna/Wycinek artykułu
-        |tytuł=${what}
-        |data=${await getDate(ans)}
-        |treść=${await getLead(ans)}
-        |obrazek=${await getImage(ans)}
-        |portal=${await getPortal(ans)}
-        |duży={{{duży|}}}
-        }}`;
-        
-        await bot.save(where, content, "Bot zmienia artykuł do ekspozycji");
-        
-}
+    const prefix = "Szablon:Strona główna/Artykuł "; //after adding a number it should look like this: Szablon:Strona główna/Artykuł 1 
 
-/*
-*   Function tasked with updating main page, called by the main() every 20 minutes
-*/
-async function updateMainPage(){
-
-    let arr = await getTop5();
-
-    const pref = "Szablon:Strona główna/Artykuł "; //after adding a number it should look like this: Szablon:Strona główna/Artykuł 1 
-  
-    for(let i=0;i<5;i++){ //This "5" represents 5 articles we are going to represent. We might need to change that value in the future to match our demands.
-        let pageToChange = pref + (i+1); 
-        await generateSneakPeek(pageToChange, arr[i]);
+    // Apply changes to all the appropriate subpages
+    for(let i=0;i<recentTitles.length;i++){
+        let pageToChange = prefix + (i+1); 
+        await generateSneakPeek(bot, pageToChange, recentTitles[i]);
     }
-    await purgePage("Strona główna"); //Purging the main page to make sure that changes we've made can be seen by everybody 
+    await purgePage(bot, "Strona główna"); //Purging the main page to make sure that changes we've made can be seen by everybody 
 }
 
-/*
-*   We all know what this is supposed to do ;)
-*/
-function sleep(seconds) {
-    return new Promise((wait) => { setTimeout(wait, seconds*1000) });
-} 
-
-/*
-*   This is not a proper way of doing that, but it should work for now
-*/
-async function main(){
-   let interval = 20 * 60; //We should update the main page every 20 minutes 
-    while(true){
-        updateMainPage();
-        await sleep(interval);
-    }
-
+/**
+ * Just schedule the proper job to be run periodically
+ */
+function main(){
+    let interval = 20 * 60 * 1000; //We should update the main page every 20 minutes
+    updateMainPage(); // So that we don't have to wait the whole inteval for first run
+    setInterval(updateMainPage, interval);
 }
 
-main()
-
+main();
