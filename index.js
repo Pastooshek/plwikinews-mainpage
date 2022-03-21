@@ -39,85 +39,77 @@ async function refreshDPL(bot, article_count){
     await bot.save(DPL_PAGE, content, "Bot odświeża listę najnowszych artykułów");
 }
 
-/*
+/**
 *   Function that gets the API response and searches for a category that the particular article should be associated with.
+*   @param wikitext The page contents as a wikitext
 */
-async function getPortal(ans){
-    ans = ans.revisions[0].content;
-
+async function getPortal(wikitext){
     const pattern = /{{(Gospodarka|Katastrofy|Kultura|Nauka|Polityka|Prawo i przestępczość|Sport|Społeczeństwo|Technika)/i; 
-    let date = ans.match(pattern);
-    if(date == null){
+    let portal = wikitext.match(pattern);
+    if(portal == null){
         return "";
     }
     else{
-        let x = date[0].substring(2);
-        x  = x[0].toUpperCase() + x.substr(1);
-        return x;
+        let portalName = portal[1];
+        portalName = portalName[0].toUpperCase() + portalName.substring(1);
+        return portalName;
     }
 }
 
-/*
+/**
 *   Gets the API response, looks for the date of article's creation
+*   @param wikitext The page contents as a wikitext
 */
-async function getDate(ans){
-
-    ans = ans.revisions[0].content;
-
-    const pattern = /{{data\|.*}}/i;  //Loking for a particular template that contains info we need
-    let date = ans.match(pattern);
+async function getDate(wikitext){
+    const pattern = /{{data\|(.*?)}}/i;  //Loking for a particular template that contains info we need
+    let date = wikitext.match(pattern);
     if(date == null){
         return "";
     }
     else{
-        return date[0].substring(7,17);
+        return date[1];
     }
 }
 
-/*
+/**
 *   Gets the API response, checks if there is an image in the text. 
 *   If there is, it should return its name (or blank string if there was no image found).
+*   @param wikitext The page contents as a wikitext
 */
-async function getImage(ans){
-
-    ans = ans.revisions[0].content;
-
+async function getImage(wikitext){
     //Yes, those regexes are scary, but @Msz2001 made sure they do indeed work!
-    let pattern = /\|[^|=\[\]\n]*\.(JPG|PNG|JPEG|WEBP|GIF|TIF|TIFF|BMP|SVG)/i;
-    let image = ans.match(pattern);
+    let pattern = /\|([^|=\[\]\n]*\.(JPG|PNG|JPEG|WEBP|GIF|TIF|TIFF|BMP|SVG))/i;
+    let image = wikitext.match(pattern);
     if(image == null){
-        pattern = /\[\[Plik:.*\.(JPG|PNG|JPEG|WEBP|GIF|TIF|TIFF|BMP|SVG)/i; 
-        image = ans.match(pattern);
+        pattern = /\[\[Plik:(.*\.(JPG|PNG|JPEG|WEBP|GIF|TIF|TIFF|BMP|SVG))/i; 
+        image = wikitext.match(pattern);
 
         if(image == null){
             return "";
         }
         else{
-            return image[0].substring(7);
+            return image[1];
         }
-        
     }
     else{
-        return image[0].substring(1);
+        return image[1];
     }
 }
 
-/*
+/**
 *   Gets the response from the API and returns the article lead.
 *   The lead should be written in bold to be recognized
+*   @param wikitext The page contents as a wikitext
 */
-async function getLead(ans){
-
-    ans = ans.revisions[0].content;
-
-    const pattern = /'''.*'''/; //Looking for text in bold (as specified earlier)
+async function getLead(wikitext){
+    const pattern = /'''(.*?)'''/; //Looking for text in bold (as specified earlier)
     
-    let lead = ans.match(pattern);
+    let lead = wikitext.match(pattern);
     if(lead===null){
         return "";
     }
     else{
-        return lead[0].substring(3,lead[0].length-3);
+        return lead[1];
     }
 }
 
@@ -151,16 +143,17 @@ async function getTop(bot, article_count){
 
 async function generateSneakPeek(bot, where, what){
     let ans = await bot.read(what); //Answer from the API
+    let wikitext = ans.revisions[0].content;
 
     //We create a string matching specifications for a sneak peek of an article. 
     //Those specifications were provided by Msz2001.
     let content =
         `{{Strona główna/Wycinek artykułu
         |tytuł=${what}
-        |data=${await getDate(ans)}
-        |treść=${await getLead(ans)}
-        |obrazek=${await getImage(ans)}
-        |portal=${await getPortal(ans)}
+        |data=${await getDate(wikitext)}
+        |treść=${await getLead(wikitext)}
+        |obrazek=${await getImage(wikitext)}
+        |portal=${await getPortal(wikitext)}
         |duży={{{duży|}}}
         }}`;
         
