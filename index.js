@@ -224,24 +224,13 @@ async function updateMainPage(){
     await purgePage("Strona główna"); //Purging the main page to make sure that changes we've made can be seen by everybody 
 }
 
-/*
-*   We all know what this is supposed to do ;)
-*/
-function sleep(seconds) {
-    return new Promise((wait) => { setTimeout(wait, seconds*1000) });
-} 
-
-/*
-*   This is not a proper way of doing that, but it should work for now
-*/
-async function main(){
-   let interval = 20 * 60; //We should update the main page every 20 minutes 
-    while(true){
-        updateMainPage();
-        await sleep(interval);
-    }
-
+/**
+ * Just schedule the proper job to be run periodically
+ */
+function main(){
+    let interval = 20 * 60; //We should update the main page every 20 minutes
+    setInterval(updateMainPage, interval);
 }
 
-main()
+main();
 
