@@ -7,6 +7,7 @@ const BOTPASSWORD = config.bot_password;
 const USERAGENT = config.user_agent; //https://meta.wikimedia.org/wiki/User-Agent_policy
 
 const ARTICLE_COUNT = 5;
+const DPL_PAGE = 'Wikireporter:PastooshekBOT/Najnowsze';
 
 /*
 *   This function purges cache of a given page, allowing it to be "refreshed"
@@ -35,7 +36,7 @@ async function refreshDPL(bot, article_count){
     notcategory=Wyróżnione
     </DynamicPageList>`;
 
-    await bot.save("Wikireporter:PastooshekBOT/Najnowsze", content, "Bot odświeża listę najnowszych artykułów");
+    await bot.save(DPL_PAGE, content, "Bot odświeża listę najnowszych artykułów");
 }
 
 /*
@@ -129,9 +130,7 @@ async function getLead(ans){
 */
 async function getTop(bot, article_count){
     await refreshDPL(bot, article_count); //Refreshing dynamic page list
-    const title = 'Wikireporter:PastooshekBOT/Najnowsze';
-
-    let pageContent = await bot.parseTitle(title); //We need to parse the contents of the page before using regex on it.
+    let pageContent = await bot.parseTitle(DPL_PAGE); //We need to parse the contents of the page before using regex on it.
 
     const regex = /title=\"(.*?)\">/g;
     let arrayOfMatches = pageContent.match(regex);
