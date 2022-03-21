@@ -131,17 +131,18 @@ async function getTop(bot, article_count){
     await refreshDPL(bot, article_count); //Refreshing dynamic page list
     const title = 'Wikireporter:PastooshekBOT/Najnowsze';
 
-    let ans = await bot.parseTitle(title); //We need to parse the contents of the page before using regex on it.
+    let pageContent = await bot.parseTitle(title); //We need to parse the contents of the page before using regex on it.
 
-    const regex = /title=.*\">/g; 
-    let arrayOfMatches = ans.match(regex);
+    const regex = /title=\"(.*?)\">/g;
+    let arrayOfMatches = pageContent.match(regex);
+    let titles = [];
 
-    for(let i=0;i<arrayOfMatches.length;i++){
-        arrayOfMatches[i]=arrayOfMatches[i].substr(7); //This function is deprecated; somebody will need to refactor it one day
-        arrayOfMatches[i]=arrayOfMatches[i].substr(0,arrayOfMatches[i].length-2);
+    // Extract the first capture group from every match
+    for(let match of arrayOfMatches){
+        titles.push(match[1]);
     }
 
-    return arrayOfMatches;
+    return titles;
 }
 
 /*
