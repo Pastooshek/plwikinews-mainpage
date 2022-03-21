@@ -125,7 +125,7 @@ async function getTop(bot, article_count){
     let pageContent = await bot.parseTitle(DPL_PAGE); //We need to parse the contents of the page before using regex on it.
 
     const regex = /title=\"(.*?)\">/g;
-    let arrayOfMatches = pageContent.match(regex);
+    let arrayOfMatches = pageContent.matchAll(regex);
     let titles = [];
 
     // Extract the first capture group from every match
@@ -191,9 +191,9 @@ async function updateMainPage(){
  * Just schedule the proper job to be run periodically
  */
 function main(){
-    let interval = 20 * 60; //We should update the main page every 20 minutes
+    let interval = 20 * 60 * 1000; //We should update the main page every 20 minutes
+    updateMainPage(); // So that we don't have to wait the whole inteval for first run
     setInterval(updateMainPage, interval);
 }
 
 main();
-
