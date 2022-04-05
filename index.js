@@ -21,28 +21,6 @@ async function purgePage(bot, title){
 }
 
 /**
-*   Function that refreshes the Dynamic Page List the bot uses by performing a null edition.
-*   Technically we could purge the cache here, but by hardcoding the contents of page we've got an additional layer of protection agains vandals :)
-*
-*   NOTE: THIS FUNCTION IS NO LONGER USED, DPL PAGES SHOULD BE PROTECTED.
-*
-*   @param bot The object obtained from mwn.init
-*   @param article_count Number of articles to load
-*/
-async function refreshDPL(bot, article_count){ 
-    let content =
-    `<DynamicPageList>
-    namespace=0
-    count=${article_count}
-    notcategory=tworzone
-    notcategory=archiwalne
-    notcategory=Wyróżnione
-    </DynamicPageList>`;
-
-    await bot.save(DPL_PAGE, content, "Bot odświeża listę najnowszych artykułów");
-}
-
-/**
 *   Function that gets the API response and searches for a category that the particular article should be associated with.
 *   @param wikitext The page contents as a wikitext
 */
