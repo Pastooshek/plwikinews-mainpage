@@ -6,9 +6,6 @@ const BOTUSERNAME = config.bot_username;
 const BOTPASSWORD = config.bot_password;
 const USERAGENT = config.user_agent; //https://meta.wikimedia.org/wiki/User-Agent_policy
 
-const ARTICLE_COUNT = 5;
-//const DPL_PAGE = 'Wikireporter:PastooshekBOT/Najnowsze';
-
 /*
 *   This function purges cache of a given page, allowing it to be "refreshed"
 *   Quite important to call it after changing contents of the main page
