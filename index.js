@@ -1,13 +1,13 @@
 const { mwn } = require('mwn'); 
 const config = require('./config.json');
-
+const updateData = require('./updateData.json');
 
 const BOTUSERNAME = config.bot_username;
 const BOTPASSWORD = config.bot_password;
 const USERAGENT = config.user_agent; //https://meta.wikimedia.org/wiki/User-Agent_policy
 
 const ARTICLE_COUNT = 5;
-const DPL_PAGE = 'Wikireporter:PastooshekBOT/Najnowsze';
+//const DPL_PAGE = 'Wikireporter:PastooshekBOT/Najnowsze';
 
 /*
 *   This function purges cache of a given page, allowing it to be "refreshed"
@@ -23,6 +23,9 @@ async function purgePage(bot, title){
 /**
 *   Function that refreshes the Dynamic Page List the bot uses by performing a null edition.
 *   Technically we could purge the cache here, but by hardcoding the contents of page we've got an additional layer of protection agains vandals :)
+*
+*   NOTE: THIS FUNCTION IS NO LONGER USED, DPL PAGES SHOULD BE PROTECTED.
+*
 *   @param bot The object obtained from mwn.init
 *   @param article_count Number of articles to load
 */
@@ -120,9 +123,10 @@ async function getLead(wikitext){
 *   @param bot The object obtained from mwn.init
 *   @param article_count Number of articles to load
 */
-async function getTop(bot, article_count){
-    await refreshDPL(bot, article_count); //Refreshing dynamic page list
-    let pageContent = await bot.parseTitle(DPL_PAGE); //We need to parse the contents of the page before using regex on it.
+async function getTop(bot, article_count, dpl_location){
+    //await refreshDPL(bot, article_count); //Refreshing dynamic page list
+    await purgePage(dpl_location);
+    let pageContent = await bot.parseTitle(dpl_location); //We need to parse the contents of the page before using regex on it 
 
     const regex = /title=\"(.*?)\">/g;
     let arrayOfMatches = pageContent.matchAll(regex);
@@ -161,9 +165,27 @@ async function generateSneakPeek(bot, where, what){
 }
 
 /*
-*   Function tasked with updating main page, called by the main() every 20 minutes
+*   Function tasked with updating the given page, called by the main() every 20 minutes
 */
-async function updateMainPage(){
+async function updatePage(bot, pagename, template_location, dpl_location){
+
+    let recentTitles = await getTop(bot, ARTICLE_COUNT, dpl_location);
+
+    const prefix = `${template_location} `; //after adding a number it should look like this: Szablon:Strona główna/Artykuł 1 
+
+    // Apply changes to all the appropriate subpages
+    for(let i=0;i<recentTitles.length;i++){
+        let pageToChange = prefix + (i+1); 
+        await generateSneakPeek(bot, pageToChange, recentTitles[i]);
+    }
+    await purgePage(bot, pagename); //Purging the main page to make sure that changes we've made can be seen by everybody 
+}
+
+/**
+ * It goes through all pages listed in the updateData.json and calls updatePage() accordingly
+ */
+async function updateAllPages(){
+
     // Initialize the bot to be used in subsequent calls
     const bot = await mwn.init({
         apiUrl: 'https://pl.wikinews.org/w/api.php',
@@ -175,16 +197,11 @@ async function updateMainPage(){
         }
     });
 
-    let recentTitles = await getTop(bot, ARTICLE_COUNT);
-
-    const prefix = "Szablon:Strona główna/Artykuł "; //after adding a number it should look like this: Szablon:Strona główna/Artykuł 1 
-
-    // Apply changes to all the appropriate subpages
-    for(let i=0;i<recentTitles.length;i++){
-        let pageToChange = prefix + (i+1); 
-        await generateSneakPeek(bot, pageToChange, recentTitles[i]);
+    for(let i=0;i<updateData.length;i++){
+        const current_page = updateData[i];
+        await updatePage(bot, current_page.pagename, current_page.template_location, current_page.dpl_location);
     }
-    await purgePage(bot, "Strona główna"); //Purging the main page to make sure that changes we've made can be seen by everybody 
+
 }
 
 /**
@@ -192,8 +209,8 @@ async function updateMainPage(){
  */
 function main(){
     let interval = 20 * 60 * 1000; //We should update the main page every 20 minutes
-    updateMainPage(); // So that we don't have to wait the whole inteval for first run
-    setInterval(updateMainPage, interval);
+    updateAllPages(); // So that we don't have to wait the whole inteval for first run
+    setInterval(updateAllPages, interval);
 }
 
 main();
