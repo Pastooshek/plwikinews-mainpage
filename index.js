@@ -96,7 +96,7 @@ async function getLead(wikitext){
 *   It's not the cleanest implementation, but it works sufficiently.
 *   Please note that said list excludes articles with {{tworzone}} template.
 *   @param bot The object obtained from mwn.init
-*   @param article_count Number of articles to load
+*   @param dpl_location Location of the dynamic page list
 */
 async function getTop(bot, dpl_location){
 
@@ -140,11 +140,11 @@ async function generateSneakPeek(bot, where, what){
 }
 
 /*
-*   Function tasked with updating the given page, called by the main() every 20 minutes
+*   Function tasked with updating the given page, called by the updateAllPages() every 20 minutes
 */
 async function updatePage(bot, pagename, template_location, dpl_location){
 
-    let recentTitles = await getTop(bot, ARTICLE_COUNT, dpl_location);
+    let recentTitles = await getTop(bot, dpl_location);
 
     const prefix = `${template_location} `; //after adding a number it should look like this: Szablon:Strona główna/Artykuł 1 
 
