@@ -100,7 +100,7 @@ async function getLead(wikitext){
 */
 async function getTop(bot, dpl_location){
 
-    await purgePage(dpl_location);
+    await purgePage(bot, dpl_location);
     let pageContent = await bot.parseTitle(dpl_location); //We need to parse the contents of the page before using regex on it 
 
     const regex = /title=\"(.*?)\">/g;
