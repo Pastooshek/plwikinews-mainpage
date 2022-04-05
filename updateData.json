@@ -3,5 +3,10 @@
         "pagename": "Strona główna",
         "template_location": "Szablon:Strona główna/Artykuł",
         "dpl_location": "Wikireporter:PastooshekBOT/Najnowsze"
+    },
+    {
+        "pagename": "Portal:Gospodarka",
+        "template_location": "Portal:Gospodarka/Artykuł",
+        "dpl_location": "Portal:Gospodarka/Najnowsze"
     }
 ]
