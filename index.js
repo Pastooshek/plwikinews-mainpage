@@ -98,8 +98,8 @@ async function getLead(wikitext){
 *   @param bot The object obtained from mwn.init
 *   @param article_count Number of articles to load
 */
-async function getTop(bot, article_count, dpl_location){
-    //await refreshDPL(bot, article_count); //Refreshing dynamic page list
+async function getTop(bot, dpl_location){
+
     await purgePage(dpl_location);
     let pageContent = await bot.parseTitle(dpl_location); //We need to parse the contents of the page before using regex on it 
 
