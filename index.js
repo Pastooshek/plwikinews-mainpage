@@ -22,7 +22,7 @@ async function purgePage(bot, title){
 *   @param wikitext The page contents as a wikitext
 */
 async function getPortal(wikitext){
-    const pattern = /{{(Gospodarka|Katastrofy|Kultura|Nauka|Polityka|Prawo i przestępczość|Sport|Społeczeństwo|Technika)/i; 
+    const pattern = /{{(Gospodarka|Katastrofy|Kultura|Nauka|Polityka|Prawo i przestępczość|Sport|Społeczeństwo|Środowisko|Technika)/i; 
     let portal = wikitext.match(pattern);
     if(portal == null){
         return "";
