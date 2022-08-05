@@ -28,5 +28,30 @@
         "pagename": "Portal:Nauka",
         "template_location": "Portal:Nauka/Artykuł",
         "dpl_location": "Portal:Nauka/Najnowsze"
+    },
+    {
+        "pagename": "Portal:Polityka",
+        "template_location": "Portal:Polityka/Artykuł",
+        "dpl_location": "Portal:Polityka/Najnowsze"
+    },
+    {
+        "pagename": "Portal:Prawo i przestępczość",
+        "template_location": "Portal:Prawo i przestępczość/Artykuł",
+        "dpl_location": "Portal:Prawo i przestępczość/Najnowsze"
+    },
+    {
+        "pagename": "Portal:Społeczeństwo",
+        "template_location": "Portal:Społeczeństwo/Artykuł",
+        "dpl_location": "Portal:Społeczeństwo/Najnowsze"
+    },
+    {
+        "pagename": "Portal:Środowisko",
+        "template_location": "Portal:Środowisko/Artykuł",
+        "dpl_location": "Portal:Środowisko/Najnowsze"
+    },
+    {
+        "pagename": "Portal:Technika",
+        "template_location": "Portal:Technika/Artykuł",
+        "dpl_location": "Portal:Technika/Najnowsze"
     }
 ]
