@@ -8,5 +8,10 @@
         "pagename": "Portal:Gospodarka",
         "template_location": "Portal:Gospodarka/Artykuł",
         "dpl_location": "Portal:Gospodarka/Najnowsze"
+    },
+    {
+        "pagename": "Portal:Sport",
+        "template_location": "Portal:Sport/Artykuł",
+        "dpl_location": "Portal:Sport/Najnowsze"
     }
 ]
