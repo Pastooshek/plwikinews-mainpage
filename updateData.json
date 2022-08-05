@@ -13,5 +13,20 @@
         "pagename": "Portal:Sport",
         "template_location": "Portal:Sport/Artykuł",
         "dpl_location": "Portal:Sport/Najnowsze"
+    },
+    {
+        "pagename": "Portal:Katastrofy i klęski żywiołowe",
+        "template_location": "Portal:Katastrofy i klęski żywiołowe/Artykuł",
+        "dpl_location": "Portal:Katastrofy i klęski żywiołowe/Najnowsze"
+    },
+    {
+        "pagename": "Portal:Kultura i rozrywka",
+        "template_location": "Portal:Kultura i rozrywka/Artykuł",
+        "dpl_location": "Portal:Kultura i rozrywka/Najnowsze"
+    },
+    {
+        "pagename": "Portal:Nauka",
+        "template_location": "Portal:Nauka/Artykuł",
+        "dpl_location": "Portal:Nauka/Najnowsze"
     }
 ]
