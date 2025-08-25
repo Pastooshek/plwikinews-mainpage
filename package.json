@@ -9,6 +9,6 @@
   "author": "Pastooshek",
   "license": "ISC",
   "dependencies": {
-    "mwn": "^1.11.4"
+    "mwn": "^3.0.1"
   }
 }
